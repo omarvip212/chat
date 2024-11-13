@@ -1,30 +1,35 @@
-import { account } from './appwrite-config.js';
+import { account } from './js/appwrite-config.js';
 
-class Auth {
-    async register(email, password) {
-        try {
-            await account.create('unique()', email, password);
-            await this.login(email, password);
-        } catch (error) {
-            throw new Error('فشل في إنشاء الحساب: ' + error.message);
-        }
-    }
-
-    async login(email, password) {
-        try {
-            await account.createEmailSession(email, password);
-        } catch (error) {
-            throw new Error('فشل في تسجيل الدخول: ' + error.message);
-        }
-    }
-
-    async logout() {
-        try {
-            await account.deleteSession('current');
-        } catch (error) {
-            console.error('فشل في تسجيل الخروج:', error);
-        }
+// تسجيل الدخول
+async function login(email, password) {
+    try {
+        await account.createEmailSession(email, password);
+        window.location.href = 'index.html';
+    } catch (error) {
+        console.error('Error logging in:', error);
+        alert('خطأ في تسجيل الدخول');
     }
 }
 
-export default new Auth(); 
+// تسجيل حساب جديد
+async function register(email, password) {
+    try {
+        await account.create('unique()', email, password);
+        await login(email, password);
+    } catch (error) {
+        console.error('Error registering:', error);
+        alert('خطأ في إنشاء الحساب');
+    }
+}
+
+// تسجيل الخروج
+async function logout() {
+    try {
+        await account.deleteSession('current');
+        window.location.href = 'login.html';
+    } catch (error) {
+        console.error('Error logging out:', error);
+    }
+}
+
+export default { login, register, logout }; 

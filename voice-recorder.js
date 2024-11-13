@@ -1,3 +1,5 @@
+import { storage } from './js/appwrite-config.js';
+
 class VoiceRecorder {
     constructor(chatRoom) {
         this.chatRoom = chatRoom;
@@ -84,11 +86,17 @@ class VoiceRecorder {
     }
 
     async uploadAudio(blob) {
-        // هنا يتم رفع الملف الصوتي إلى Firebase Storage
-        const storageRef = firebase.storage().ref();
-        const audioRef = storageRef.child(`voice-messages/${Date.now()}.webm`);
-        await audioRef.put(blob);
-        return await audioRef.getDownloadURL();
+        try {
+            const file = await storage.createFile(
+                'media-files',
+                'unique()',
+                blob
+            );
+            return file.$id;
+        } catch (error) {
+            console.error('Error uploading audio:', error);
+            throw error;
+        }
     }
 
     showRecordingUI() {

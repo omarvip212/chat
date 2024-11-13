@@ -1,27 +1,27 @@
+import { account, databases, DATABASE_ID, ROOMS_COLLECTION_ID } from './js/appwrite-config.js';
+
 document.addEventListener('DOMContentLoaded', () => {
-    const auth = firebase.auth();
-    const database = firebase.database();
-    
-    const noBtn = document.getElementById('no-btn');
-    const yesBtn = document.getElementById('yes-btn');
-    const initialScreen = document.getElementById('initial-screen');
-    const successScreen = document.getElementById('success-screen');
-    const usernameSpan = document.getElementById('username');
-    const logoutBtn = document.getElementById('logout-btn');
-    
     // التحقق من حالة تسجيل الدخول
-    auth.onAuthStateChanged(async (user) => {
+    account.get().then(async (user) => {
         if (user) {
-            // إظهار اسم المستخدم
-            const userRef = database.ref(`users/${user.uid}`);
-            const snapshot = await userRef.once('value');
-            const userData = snapshot.val();
-            if (userData && userData.username) {
-                usernameSpan.textContent = `مرحباً، ${userData.username}`;
+            try {
+                const response = await databases.getDocument(
+                    DATABASE_ID,
+                    USERS_COLLECTION_ID,
+                    user.$id
+                );
+                if (response.username) {
+                    document.getElementById('username').textContent = `مرحباً، ${response.username}`;
+                }
+            } catch (error) {
+                console.error('Error fetching user data:', error);
             }
         } else {
             window.location.href = 'login.html';
         }
+    }).catch(error => {
+        console.error('Auth check error:', error);
+        window.location.href = 'login.html';
     });
 
     // معالجة زر تسجيل الخروج
@@ -80,12 +80,17 @@ document.addEventListener('DOMContentLoaded', () => {
 async function createChatRoom() {
     const roomId = Math.random().toString(36).substr(2, 9);
     try {
-        const roomRef = firebase.database().ref(`rooms/${roomId}`);
-        await roomRef.set({
-            createdAt: firebase.database.ServerValue.TIMESTAMP,
-            active: true
-        });
-        return roomId;
+        const response = await databases.createDocument(
+            DATABASE_ID,
+            ROOMS_COLLECTION_ID,
+            'unique()',
+            {
+                roomId: roomId,
+                createdAt: new Date().toISOString(),
+                active: true
+            }
+        );
+        return response.$id;
     } catch (error) {
         console.error('Error creating room:', error);
         throw error;
